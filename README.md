@@ -29,13 +29,13 @@
 1. Run the app on one shell:
 
    ```shell
-   python    main.py
+   python main.py
    ```
 
 3. Run the app on another shell:
 
    ```shell
-   python3 main.py
+   python main.py
    ```
 4. On one shell enter the port 2222
 
