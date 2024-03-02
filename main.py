@@ -16,6 +16,13 @@ def deleteAudioFiles(directoryToDeleteFromRoot):
     # Directory to delete
     delDirectory = current_directory + "/" + directoryToDeleteFromRoot
 
+    # Check if directory exists
+    directoryExists = os.path.exists(delDirectory)
+    if not directoryExists:
+        print ("Creating " + directoryToDeleteFromRoot + " directory")
+        os.mkdir(directoryToDeleteFromRoot)
+        return
+    
     # List all files in the directory
     files = os.listdir(delDirectory)
 
@@ -31,8 +38,9 @@ def deleteAudioFiles(directoryToDeleteFromRoot):
     
 class Client(DatagramProtocol):
     
-    def __init__(self, speech) -> None:
+    def __init__(self, speech, audioFile) -> None:
         super().__init__()
+        self.audioFileLocation = audioFile
         self.counter = 0
         # Convert the speech tensor to a PyAudio-compatible format
         self.audio_data = speech.numpy().astype('float32')
@@ -89,7 +97,7 @@ class Client(DatagramProtocol):
     def save_recording_and_translate(self, frames):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output_{timestamp}.wav"
-        filename = "./audioFiles/" + filename
+        filename = f"./{self.audioFileLocation}/" + filename
         with wave.open(filename, 'wb') as wf:
             wf.setnchannels(1)
             wf.setsampwidth(self.py_audio.get_sample_size(pyaudio.paInt16))
@@ -113,7 +121,8 @@ class Client(DatagramProtocol):
 
 if __name__ == '__main__':
     #Delete previous files
-    deleteAudioFiles("audioFiles")
+    audioFileLocation = "audioFiles"
+    deleteAudioFiles(audioFileLocation)
 
     #Start models
     startModel()
@@ -126,6 +135,6 @@ if __name__ == '__main__':
     port = randint(1000, 3000)
     print("Working on port: ", port)
 
-    reactor.listenUDP(port, Client(speech))
+    reactor.listenUDP(port, Client(speech, audioFileLocation))
     reactor.run()
     print("Reactor stopped!")
