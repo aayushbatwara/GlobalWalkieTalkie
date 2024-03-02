@@ -1,0 +1,11 @@
+torch
+transformers
+datasets
+IPython.display
+datetime
+os
+random
+wave
+twisted
+pyaudio
+numpy
