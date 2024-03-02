@@ -14,28 +14,22 @@
 
    ```shell
    cd GlobalWalkieTalkie
-   python3 -m venv venv
-   source venv/bin/activate
+   python3.10-or-above-executable -m venv myEnv
+   source myEnv/bin/activate
    ```
 
 3. Install the required dependencies using `pip`:
 
    ```shell
-   pip3 install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 ## Usage
 
-1. Make sure the virtual environment is activated:
+1. Run the app on one shell:
 
    ```shell
-   source venv/bin/activate
-   ```
-
-2. Run the app on one shell:
-
-   ```shell
-   python3 main.py
+   python    main.py
    ```
 
 3. Run the app on another shell:

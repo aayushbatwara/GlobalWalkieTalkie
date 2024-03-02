@@ -1,2 +1,5 @@
 /audioFiles
 *.wav
+__pycache__
+myEnv
+.DS_STORE
