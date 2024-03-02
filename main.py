@@ -56,7 +56,7 @@ class Client(DatagramProtocol):
         self.another_client = input("Write address: "), int(input("Write port: "))
         if self.another_client[0] == "":
             self.another_client="127.0.0.1", self.another_client[1]
-
+    
         self.output_stream = self.py_audio.open(format=pyaudio.paFloat32,
                                         channels=1,
                                         rate=self.sample_rate,
