@@ -20,7 +20,7 @@
 3. Install the required dependencies using `pip`:
 
    ```shell
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 ## Usage
