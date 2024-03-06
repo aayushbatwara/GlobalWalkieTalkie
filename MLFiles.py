@@ -14,7 +14,6 @@ def startModel():
     pipe = pipeline(
     "automatic-speech-recognition", model="openai/whisper-base", device=device
     )
-    print ("Connected to Whisper Model")
 
 def startSpeechProcessor():  
     global processor, model, vocoder, speaker_embeddings

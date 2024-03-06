@@ -2,7 +2,7 @@ import datetime
 import os
 from random import randint
 import wave
-
+import sys
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 import pyaudio
@@ -19,7 +19,7 @@ def deleteAudioFiles(directoryToDeleteFromRoot):
     # Check if directory exists
     directoryExists = os.path.exists(delDirectory)
     if not directoryExists:
-        print ("Creating " + directoryToDeleteFromRoot + " directory")
+        print (f"{getDateTime()}Creating " + directoryToDeleteFromRoot + " directory")
         os.mkdir(directoryToDeleteFromRoot)
         return
     
@@ -34,8 +34,11 @@ def deleteAudioFiles(directoryToDeleteFromRoot):
             os.remove(file_path)
             fileCounter+=1
 
-    print("Deleted " + str(fileCounter) + " audio files.")
+    print(f"{getDateTime()}Deleted " + str(fileCounter) + " audio files.")
     
+def getDateTime():
+    return f'[{datetime.datetime.now().strftime("%H:%M:%S")}]: '
+
 class Client(DatagramProtocol):
     
     def __init__(self, speech, audioFile) -> None:
@@ -43,8 +46,7 @@ class Client(DatagramProtocol):
         self.audioFileLocation = audioFile
         self.counter = 0
         # Convert the speech tensor to a PyAudio-compatible format
-        self.audio_data = speech.numpy().astype('float32')
-        print("Instantiated class!")
+        #self.audio_data = speech.numpy().astype('float32')
 
     def startProtocol(self):
         #Audio File
@@ -52,49 +54,35 @@ class Client(DatagramProtocol):
         self.sample_rate = 16000
         self.py_audio = pyaudio.PyAudio()
         self.buffer = 1024  
-        self.THRESHOLD = 1000
+        self.THRESHOLD = int(input("Enter Energy Threshold (1000 is default): ")) 
         self.another_client = input("Write address: "), int(input("Write port: "))
+        self.frames = []
+        self.silence_counter = 0
+        self.speaking = False
+
         if self.another_client[0] == "":
             self.another_client="127.0.0.1", self.another_client[1]
-    
+
+        self.input_stream = self.py_audio.open(format=pyaudio.paInt16,
+                                          input=True, rate=44100, channels=1,
+                                          frames_per_buffer=self.buffer)
+
         self.output_stream = self.py_audio.open(format=pyaudio.paFloat32,
                                         channels=1,
                                         rate=self.sample_rate,
                                         output=True)
         
-        self.input_stream = self.py_audio.open(format=pyaudio.paInt16,
-                                          input=True, rate=44100, channels=1,
-                                          frames_per_buffer=self.buffer)
+        # self.output_stream = self.py_audio.open(format=pyaudio.paInt16,
+        #                                   output=True, rate=44100, channels=1,
+        #                                   frames_per_buffer=self.buffer)
         reactor.callInThread(self.record)
 
     def record(self):
-        frames = []
-        silence_counter = 0
-        speaking = False
+        print(f"{getDateTime()}Beginning to record")
+
         while True:
             data = self.input_stream.read(self.buffer, False)
-            if speaking:
-                frames.append(data)
-            audio = np.frombuffer(data, dtype=np.int16)
-            energy = np.sum(np.abs(audio)) / len(audio)
-            if energy < self.THRESHOLD:
-                silence_counter += 1
-                if silence_counter > 50:  # Adjust the number of consecutive silent chunks required for a pause
-                    if speaking:
-                        transcribedText = self.save_recording_and_translate(frames)
-                        print(transcribedText)
-                        speech = synthesise(transcribedText, -1)
-                        self.audio_data = speech.numpy().astype('float32')
-                        print("Transporting..")
-                        self.transport.write(data, self.another_client) #speech done, translate and output  
-                        #MAKE SURE TO USE FRAMES
-                        silence_counter=0
-                        speaking = False
-                    else:
-                        pass
-            else:
-                speaking = True
-                silence_counter = 0
+            self.transport.write(data, self.another_client)
     
     def save_recording_and_translate(self, frames):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -108,18 +96,39 @@ class Client(DatagramProtocol):
         frames.clear()
 
         return translate(filename)
+    
+    def outputTextToSpeech(self, text):
+        speech = synthesise(text, -1)
+        print (f"{getDateTime()}Audio created for: " + text)
+        audio_data = speech.numpy().astype('float32')
+        self.output_stream.write(audio_data.tobytes())
+    
+    def translationBlockingMethod(self):
+        print (f"{getDateTime()} Blocking Method Called")
+        self.outputTextToSpeech(self.save_recording_and_translate(self.frames))
+        print (f"{getDateTime()} Blocking Method Finished")
 
-
-    #This is not printing probably because the recording thread is on first? Main thread?
     def datagramReceived(self, datagram, addr):
-        self.counter+=1
-        print(self.counter, end = " ")
-        self.output_stream.write(self.audio_data.tobytes())
-        # self.output_stream.write(datagram)
-        if self.counter == 10:
-            reactor.stop()
-            #close the stream
+                
+        if self.speaking:
+            self.frames.append(datagram)
 
+        audio = np.frombuffer(datagram, dtype=np.int16) #hmm is this correct type
+        energy = np.sum(np.abs(audio)) / len(audio)
+        #print(f"{getDateTime()}Energy level: {energy}")
+        if energy < self.THRESHOLD:
+            self.silence_counter += 1
+            if self.silence_counter > 50: 
+                if self.speaking:
+                    reactor.callInThread(self.translationBlockingMethod) #output stream translates and writes in new thread
+                    self.silence_counter=0
+                    self.speaking = False
+                else:
+                    if self.counter == 500: 
+                        reactor.stop() #close stream after long silence
+        else:
+            self.speaking = True
+            self.silence_counter = 0
 
 if __name__ == '__main__':
     #Delete previous files
@@ -135,8 +144,12 @@ if __name__ == '__main__':
     speech = synthesise(text, -1)
 
     port = randint(1000, 3000)
-    print("Working on port: ", port)
+    print(f"{getDateTime()}Working on port: ", port)
 
     reactor.listenUDP(port, Client(speech, audioFileLocation))
     reactor.run()
+<<<<<<< HEAD
     print("Reactor stopped!")
+=======
+    print(f"{getDateTime()}Reactor stopped!")
+>>>>>>> 56d9f4e (implemented multithreading for translation)
