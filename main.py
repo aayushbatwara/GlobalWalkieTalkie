@@ -148,8 +148,4 @@ if __name__ == '__main__':
 
     reactor.listenUDP(port, Client(speech, audioFileLocation))
     reactor.run()
-<<<<<<< HEAD
-    print("Reactor stopped!")
-=======
     print(f"{getDateTime()}Reactor stopped!")
->>>>>>> 56d9f4e (implemented multithreading for translation)
