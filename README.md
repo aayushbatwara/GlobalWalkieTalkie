@@ -26,28 +26,29 @@
 
 ## Usage
 
-1. Run the app on one shell:
+1. Run the app on one device:
 
    ```shell
    python main.py
    ```
 
-3. Run the app on another shell:
+2. Run the app on another device:
 
    ```shell
    python main.py
    ```
-4. On one shell enter the port 2222
+3. Enter each other's IP address and ports. 
 
    ```shell
+   Enter threshold: 1000
+   Enter IP Address: 192.168.0.11
    Working on port:  1392
-   Write port: 2222
+   Write port: 1469
    ```
-5. On the other shell enter the port of the first shell
-
    ```shell
+   Enter threshold: 1000
+   Enter IP Address: 192.168.0.77
    Working on port:  1469
    Write port: 1392
    ```
-6. Say 'Hello World' for the first message
-7. Speak subsequent message. Couple short sentences are optimal because they are long enough for language and context detection. 
+4. Speak. Couple short sentences are optimal because they are long enough for language and context detection. 
